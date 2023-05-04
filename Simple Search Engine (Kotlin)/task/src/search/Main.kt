@@ -1,7 +1,7 @@
 package search
 
-const val ENTER_NUMBER_OF_LINES = "Enter the number of people:"
-const val ENTER_ALL_LINES = "Enter all people:"
+import java.io.File
+
 const val ENTER_SEARCH_DATA = "Enter a name or email to search all suitable people."
 const val RESULT = "People found:"
 const val NOT_FOUND = "No matching people found."
@@ -40,17 +40,15 @@ fun printAll(lines: List<String>) {
     println(lines.joinToString("\n"))
 }
 
-fun expandedSearch() {
-    val size: Int = ENTER_NUMBER_OF_LINES.answer().toInt()
-    val lines = ENTER_ALL_LINES.answer(size)
+fun expandedSearch(filePath: String) {
+    val file = File(filePath)
+    val lines = file.readLines()
     menu(lines)
     println("Bye!")
 }
 
 fun String.answer() = also { println(it) }.run { readln() }
 
-fun String.answer(number: Int) = also { println(it) }.run { List(number) { readln() } }
-
-fun main() {
-    expandedSearch()
+fun main(args: Array<String>) {
+    expandedSearch(args[1])
 }
