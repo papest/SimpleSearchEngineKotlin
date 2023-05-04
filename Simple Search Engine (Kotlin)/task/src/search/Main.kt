@@ -12,9 +12,10 @@ const val MENU_TEXT = """=== Menu ===
 const val TITLE_OF_LIST = "=== List of people ==="
 const val INCORRECT_OPTION = "Incorrect option! Try again."
 
-fun searchDialog(lines: List<String>) {
+fun searchDialog(lines: List<String>, invertedIndexMap: MutableMap<String, MutableSet<Int>>) {
     val searchData = ENTER_SEARCH_DATA.answer()
-    val result = lines.filter { it.replace("\\s".toRegex(), "").contains(searchData, true) }
+
+    val result = (invertedIndexMap[searchData] ?: mutableSetOf()).toList().map { lines[it] }
     if (result.isEmpty()) {
         println(NOT_FOUND)
     } else {
@@ -23,11 +24,11 @@ fun searchDialog(lines: List<String>) {
     }
 }
 
-fun menu(lines: List<String>) {
+fun menu(lines: List<String>, invertedIndexMap: MutableMap<String, MutableSet<Int>>) {
     while (true) {
         println(MENU_TEXT)
         when (readln()) {
-            "1" -> searchDialog(lines)
+            "1" -> searchDialog(lines, invertedIndexMap)
             "2" -> printAll(lines)
             "0" -> break
             else -> println(INCORRECT_OPTION)
@@ -43,7 +44,17 @@ fun printAll(lines: List<String>) {
 fun expandedSearch(filePath: String) {
     val file = File(filePath)
     val lines = file.readLines()
-    menu(lines)
+    val invertedIndexMap = mutableMapOf<String, MutableSet<Int>>()
+    lines.indices.forEach {
+        for (word in lines[it].split("\\s+".toRegex())) {
+            if (invertedIndexMap.contains(word)) {
+                invertedIndexMap[word]?.add(it)
+            } else {
+                invertedIndexMap[word] = mutableSetOf(it)
+            }
+        }
+    }
+    menu(lines, invertedIndexMap)
     println("Bye!")
 }
 
