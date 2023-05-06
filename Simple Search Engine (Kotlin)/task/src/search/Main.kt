@@ -11,11 +11,49 @@ const val MENU_TEXT = """=== Menu ===
 0. Exit"""
 const val TITLE_OF_LIST = "=== List of people ==="
 const val INCORRECT_OPTION = "Incorrect option! Try again."
+const val SELECT_STRATEGY = "Select a matching strategy: ALL, ANY, NONE"
+
+enum class Strategy {
+    ALL,
+    ANY,
+    NONE
+}
+
+fun searchWords(
+    dataSearch: String,
+    strategy: Strategy,
+    lines: List<String>,
+    invertedIndexMap: MutableMap<String, MutableSet<Int>>
+): MutableSet<String> {
+    var result = mutableSetOf<String>()
+    val dataSearchList = dataSearch.split("\\s".toRegex())
+    when (strategy) {
+        Strategy.ANY -> {
+            dataSearchList.forEach { word ->
+                result.addAll((invertedIndexMap[word] ?: mutableSetOf()).toList().map { lines[it] })
+            }
+        }
+        Strategy.NONE -> {
+            result.addAll(lines)
+            dataSearchList.forEach { it ->
+                result.removeAll((invertedIndexMap[it] ?: mutableSetOf()).map { lines[it] }.toSet())
+            }
+        }
+        Strategy.ALL -> {
+            dataSearchList.forEach { it ->
+                val res = (invertedIndexMap[it] ?: mutableSetOf()).map { lines[it] }
+                if (res.isEmpty()) return result
+                result = if (result.isEmpty()) res.toMutableSet() else result.intersect(res.toSet()).toMutableSet()
+            }
+        }
+    }
+    return result
+}
 
 fun searchDialog(lines: List<String>, invertedIndexMap: MutableMap<String, MutableSet<Int>>) {
-    val searchData = ENTER_SEARCH_DATA.answer()
-
-    val result = (invertedIndexMap[searchData] ?: mutableSetOf()).toList().map { lines[it] }
+    val strategy: Strategy = Strategy.valueOf(SELECT_STRATEGY.answer())
+    val searchData = ENTER_SEARCH_DATA.answer().lowercase()
+    val result = searchWords(searchData, strategy, lines, invertedIndexMap)
     if (result.isEmpty()) {
         println(NOT_FOUND)
     } else {
@@ -46,7 +84,7 @@ fun expandedSearch(filePath: String) {
     val lines = file.readLines()
     val invertedIndexMap = mutableMapOf<String, MutableSet<Int>>()
     lines.indices.forEach {
-        for (word in lines[it].split("\\s+".toRegex())) {
+        for (word in lines[it].lowercase().split("\\s+".toRegex())) {
             if (invertedIndexMap.contains(word)) {
                 invertedIndexMap[word]?.add(it)
             } else {
